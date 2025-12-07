@@ -1,0 +1,328 @@
+/* assets/css/style.css */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap');
+
+:root {
+    --bg-dark: #050A14;
+    --primary-glow: #00C2FF;  /* Warna Cyan */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --text-white: #ffffff;
+    --text-muted: #7fa4d3;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-white);
+    overflow-x: hidden;
+}
+
+/* --- GLOW EFFECTS --- */
+.ambient-glow {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(0, 194, 255, 0.15) 0%, rgba(0,0,0,0) 70%);
+    top: -100px;
+    left: -100px;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* --- NAVBAR (Updated Layout) --- */
+.navbar {
+    padding-top: 20px;
+    transition: all 0.3s ease;
+    /* Gradient halus supaya menu terbaca */
+    background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
+}
+.navbar.scrolled {
+    background: rgba(5, 10, 20, 0.95);
+    backdrop-filter: blur(15px);
+    padding-top: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--glass-border);
+}
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(0, 194, 255, 0.5);
+}
+.nav-link {
+    color: rgba(255,255,255,0.8) !important;
+    font-weight: 500;
+    margin: 0 10px;
+}
+.nav-link:hover, .nav-link.active {
+    color: var(--text-white) !important;
+    text-shadow: 0 0 8px rgba(255,255,255,0.5);
+}
+
+/* Tombol Navbar Khusus */
+.btn-nav-login {
+    color: white;
+    font-weight: 600;
+    padding: 8px 25px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    transition: 0.3s;
+    background: rgba(255,255,255,0.05);
+}
+.btn-nav-login:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: white;
+}
+.btn-nav-register {
+    background-color: #3b5d8f; /* Biru seperti referensi */
+    color: white;
+    font-weight: 600;
+    padding: 8px 25px;
+    border-radius: 8px;
+    border: none;
+    transition: 0.3s;
+}
+.btn-nav-register:hover {
+    background-color: #4a75b0;
+    transform: translateY(-2px);
+}
+
+/* --- HERO SECTION --- */
+.hero-section {
+    position: relative;
+    min-height: 100vh;
+    padding-top: 80px;
+    background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop') no-repeat center top;
+    background-size: cover;
+}
+/* Overlay lebih gelap agar teks terbaca */
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(5, 10, 20, 0.6) 0%, rgba(5, 10, 20, 1) 95%);
+    z-index: 1;
+}
+.hero-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+}
+.hero-title {
+    font-size: 4rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    background: linear-gradient(to right, #fff, #a5f3fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+    /* Tambah shadow agar kontras */
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8)); 
+}
+.hero-subtitle {
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 2px 4px rgba(0,0,0,1);
+    font-size: 1.1rem;
+}
+
+/* --- GLASS CARD & FORM INPUT --- */
+.glass-card {
+    background: rgba(23, 28, 41, 0.7); /* Lebih gelap agar input menonjol */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Fix Input Form agar kelihatan */
+.form-control-glass {
+    background: rgba(255, 255, 255, 0.1) !important; /* Agak terang */
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border-radius: 10px;
+    padding: 12px 20px;
+}
+.form-control-glass::placeholder {
+    color: rgba(255, 255, 255, 0.7) !important; /* Placeholder jadi putih terang */
+    opacity: 1;
+}
+.form-control-glass:focus {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: var(--primary-glow) !important;
+    box-shadow: 0 0 15px rgba(0, 194, 255, 0.3);
+}
+
+/* Search Box Khusus di Home */
+.search-box-glass {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    padding: 10px 25px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+}
+.search-box-glass input {
+    background: transparent;
+    border: none;
+    color: white;
+    width: 100%;
+    outline: none;
+}
+.search-box-glass input::placeholder { color: rgba(255,255,255,0.8); }
+.search-btn-glass {
+    background: white;
+    color: var(--bg-dark);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    border: none;
+    font-weight: bold;
+}
+
+/* Components lainnya */
+.detail-header-img {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 20px;
+    mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+.list-group-item-glass {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--glass-border);
+    color: white;
+    margin-bottom: 10px;
+    border-radius: 10px !important;
+    backdrop-filter: blur(5px);
+}
+.modal-content {
+    background-color: #0b1120;
+    border: 1px solid var(--glass-border);
+    color: white;
+}
+.modal-header { border-bottom: 1px solid var(--glass-border); }
+.btn-close-white { filter: invert(1) grayscale(100%) brightness(200%); }
+
+footer {
+    border-top: 1px solid var(--glass-border);
+    padding: 40px 0;
+    margin-top: 80px;
+    background: linear-gradient(to top, #02050a, var(--bg-dark));
+}
+
+@media (max-width: 991px) {
+    .navbar-collapse {
+        background: rgba(5, 10, 20, 0.98);
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 10px;
+    }
+    .hero-title { font-size: 2.5rem; }
+}.brighter-muted-text {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.brighter-link {
+    color: #4fd1ff !important;
+}
+
+/* Admin Sidebar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 0;
+    box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.1);
+    width: 250px;
+    background: rgba(5, 10, 20, 0.95);
+}
+.main-content {
+    margin-left: 250px;
+    padding: 40px;
+}
+@media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; }
+}
+
+/* Nav Pills Custom */
+.nav-pills .nav-link {
+    border-radius: 0;
+    color: rgba(255,255,255,0.7);
+    padding: 15px 25px;
+    transition: all 0.3s;
+}
+.nav-pills .nav-link:hover {
+    background: rgba(255,255,255,0.05);
+    color: white;
+}
+.nav-pills .nav-link.active {
+    background: linear-gradient(90deg, rgba(0, 194, 255, 0.2) 0%, transparent 100%);
+    border-left: 4px solid #00C2FF;
+    color: white;
+}
+/* Card Image Fix */
+.card-content-img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 15px;
+    margin-bottom: 15px;
+}
+
+.num-card-title {
+    position: absolute;
+    top: -15px;
+    left: -10px;
+    font-size: 3rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.1);
+    z-index: 0;
+}
+
+.card-real-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    position: relative;
+    z-index: 1;
+}
+
+
+/* --- READABILITY FIXES --- */
+/* Override Bootstrap's text-muted which is too dark for dark mode */
+.text-muted {
+    color: #b0b3b8 !important;
+}
+
+/* Ensure paragraph and list text in glass cards is bright enough */
+.glass-card p, 
+.glass-card li {
+    color: #e0e0e0;
+}
+
+/* Keep the labels in stats slightly muted but readable */
+.glass-card small.text-muted {
+    color: #a0a0a0 !important;
+}
+
+
+/* --- FOOTER --- */
+.footer-section {
+    background: rgba(5, 10, 20, 0.95);
+    border-top: 1px solid var(--glass-border);
+    position: relative;
+    z-index: 10;
+}
+.footer-section a:hover {
+    color: var(--primary-glow) !important;
+    transition: 0.3s;
+}
+
