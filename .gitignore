@@ -1,0 +1,5 @@
+/config/database.php
+/config/google_setup.php
+.env
+/vendor
+.DS_Store
