@@ -2,185 +2,216 @@
 session_start();
 require_once 'config/database.php';
 
-// 1. Cek ID di URL
-if (!isset($_GET['id'])) {
-    header("Location: index.php");
-    exit();
-}
-
+if (!isset($_GET['id'])) { header("Location: index.php"); exit(); }
 $id = $_GET['id'];
 
-// 2. Ambil Data Gunung
+// 1. PROSES KIRIM REVIEW
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_review'])) {
+    if (!isset($_SESSION['user_id'])) {
+        echo "<script>alert('Harap login untuk menulis ulasan!'); window.location='login.php';</script>";
+        exit();
+    }
+    
+    $u_id = $_SESSION['user_id'];
+    $rating = $_POST['rating'];
+    $comment = htmlspecialchars($_POST['comment']);
+
+    // Cek apakah user sudah pernah review gunung ini? (Satu user satu review per gunung)
+    $cek = $conn->prepare("SELECT id FROM reviews WHERE user_id = ? AND mountain_id = ?");
+    $cek->execute([$u_id, $id]);
+
+    if ($cek->rowCount() > 0) {
+        echo "<script>alert('Kamu sudah pernah mengulas gunung ini!');</script>";
+    } else {
+        $stmt = $conn->prepare("INSERT INTO reviews (user_id, mountain_id, rating, comment) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$u_id, $id, $rating, $comment]);
+        // Refresh halaman agar ulasan muncul
+        header("Location: detail.php?id=$id");
+        exit();
+    }
+}
+
+// 2. AMBIL DATA GUNUNG
 $stmt = $conn->prepare("SELECT * FROM mountains WHERE id = ?");
 $stmt->execute([$id]);
 $m = $stmt->fetch();
-
 if (!$m) die("Gunung tidak ditemukan.");
 
-// 3. Ambil Data Jalur
+// 3. AMBIL JALUR
 $stmt_routes = $conn->prepare("SELECT * FROM hiking_routes WHERE mountain_id = ?");
 $stmt_routes->execute([$id]);
 $routes = $stmt_routes->fetchAll();
+
+// 4. AMBIL REVIEW + DATA USERNYA
+$stmt_rev = $conn->prepare("
+    SELECT r.*, u.name, u.avatar, u.id as user_id 
+    FROM reviews r 
+    JOIN users u ON r.user_id = u.id 
+    WHERE r.mountain_id = ? 
+    ORDER BY r.created_at DESC
+");
+$stmt_rev->execute([$id]);
+$reviews = $stmt_rev->fetchAll();
+
+// Hitung Rating Rata-rata
+$avg_rating = 0;
+if (count($reviews) > 0) {
+    $total_rating = 0;
+    foreach($reviews as $r) $total_rating += $r['rating'];
+    $avg_rating = round($total_rating / count($reviews), 1);
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail <?= $m['name'] ?> - IndoSummit</title>
+    <title>Detail <?= $m['name'] ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-
     <div class="ambient-glow"></div>
 
+    <!-- NAVBAR SEDERHANA -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container">
             <a class="navbar-brand" href="index.php"><i class="bi bi-filter-left"></i> INDOSUMMIT</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="index.php"><i class="bi bi-arrow-left"></i> Kembali</a></li>
-                </ul>
+            <div class="ms-auto">
+                <a class="btn btn-sm btn-outline-light" href="index.php">Kembali</a>
             </div>
         </div>
     </nav>
 
     <div class="container" style="padding-top: 100px;">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="index.php" class="text-info text-decoration-none">Home</a></li>
-                <li class="breadcrumb-item active text-white-50" aria-current="page"><?= $m['name'] ?></li>
-            </ol>
-        </nav>
-
-        <div class="row g-5">
-            <!-- KOLOM KIRI: INFO GUNUNG -->
+        <!-- HEADER GUNUNG -->
+        <div class="row g-5 mb-5">
             <div class="col-lg-8">
                 <div class="position-relative mb-4">
-                    <!-- Foto dari Database -->
-                    <img src="assets/img/<?= $m['image_url'] ?>" class="detail-header-img" alt="<?= $m['name'] ?>" style="width:100%; height:400px; object-fit:cover; border-radius:15px;">
+                    <img src="assets/img/<?= $m['image_url'] ?>" class="detail-header-img w-100 rounded" style="height:400px; object-fit:cover;">
                     <div class="position-absolute bottom-0 start-0 p-3">
-                        <span class="badge bg-info text-dark mb-2"><?= $m['province'] ?></span>
                         <h1 class="fw-bold display-5 text-white" style="text-shadow: 2px 2px 4px black;"><?= $m['name'] ?></h1>
-                        <p class="text-white mb-0"><i class="bi bi-bar-chart-fill text-warning"></i> <?= $m['elevation'] ?> mdpl</p>
+                        <p class="text-white mb-0">
+                            <i class="bi bi-geo-alt-fill text-danger"></i> <?= $m['province'] ?> | 
+                            <i class="bi bi-star-fill text-warning"></i> <?= $avg_rating ?>/5.0
+                        </p>
                     </div>
+                </div>
+                
+                <div class="glass-card mb-4">
+                    <h4 class="text-info">Deskripsi</h4>
+                    <p class="text-muted"><?= nl2br($m['description']) ?></p>
                 </div>
 
+                <!-- BAGIAN KOMENTAR / ULASAN -->
                 <div class="glass-card mb-4">
-                    <h4 class="mb-3 text-info">Tentang Gunung</h4>
-                    <p class="text-muted leading-relaxed">
-                        <?= nl2br($m['description']) ?>
-                    </p>
-                    
-                    <div class="row mt-4 text-center">
-                        <div class="col-4 border-end border-secondary">
-                            <h5 class="fw-bold mb-0 text-white"><?= count($routes) ?></h5><small class="text-muted">Total Jalur</small>
-                        </div>
-                        <div class="col-4 border-end border-secondary">
-                            <h5 class="fw-bold mb-0 text-white">Buka</h5><small class="text-muted">Status</small>
-                        </div>
-                        <div class="col-4">
-                            <h5 class="fw-bold mb-0 text-white">4.8</h5><small class="text-muted">Rating</small>
-                        </div>
-                    </div>
-                </div>
+                    <h4 class="text-info mb-4">Ulasan Pendaki (<?= count($reviews) ?>)</h4>
 
-                <!-- Map Section -->
-                <?php if($m['map_url']): ?>
-                <div class="glass-card mb-4">
-                    <h4 class="mb-3 text-info">Lokasi Gunung</h4>
-                    <div style="width: 100%; height: 400px; border-radius: 10px; overflow: hidden;">
-                         <iframe src="<?= $m['map_url'] ?>" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    <!-- FORM INPUT ULASAN -->
+                    <?php if(isset($_SESSION['user_id'])): ?>
+                        <div class="card bg-dark border-secondary p-3 mb-4">
+                            <h6 class="text-white">Bagikan pengalamanmu</h6>
+                            <form method="POST">
+                                <div class="mb-2">
+                                    <select name="rating" class="form-select form-select-sm bg-dark text-white border-secondary" style="width: 150px;">
+                                        <option value="5">⭐⭐⭐⭐⭐ (5.0)</option>
+                                        <option value="4">⭐⭐⭐⭐ (4.0)</option>
+                                        <option value="3">⭐⭐⭐ (3.0)</option>
+                                        <option value="2">⭐⭐ (2.0)</option>
+                                        <option value="1">⭐ (1.0)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <textarea name="comment" class="form-control bg-dark text-white border-secondary" rows="2" placeholder="Tulis cerita singkatmu disini..." required></textarea>
+                                </div>
+                                <button type="submit" name="submit_review" class="btn btn-info btn-sm fw-bold">Kirim Ulasan</button>
+                            </form>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-secondary">Silakan <a href="login.php">Login</a> untuk menulis ulasan.</div>
+                    <?php endif; ?>
+
+                    <!-- LIST ULASAN -->
+                    <?php foreach($reviews as $rev): ?>
+                    <div class="border-bottom border-secondary pb-3 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <a href="public_profile.php?id=<?= $rev['user_id'] ?>" class="text-decoration-none">
+                                    <img src="<?= $rev['avatar'] ?>" class="rounded-circle me-2" width="40" height="40" style="object-fit:cover;">
+                                </a>
+                                <div>
+                                    <!-- NAMA BISA DIKLIK -->
+                                    <a href="public_profile.php?id=<?= $rev['user_id'] ?>" class="fw-bold text-white text-decoration-none">
+                                        <?= $rev['name'] ?>
+                                    </a>
+                                    <div class="text-warning small">
+                                        <?php for($i=0; $i<$rev['rating']; $i++) echo "★"; ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted"><?= date('d M Y', strtotime($rev['created_at'])) ?></small>
+                        </div>
+                        <p class="text-white-50 mt-2 mb-0 small"><?= $rev['comment'] ?></p>
                     </div>
+                    <?php endforeach; ?>
+
                 </div>
-                <?php endif; ?>
             </div>
 
-            <!-- KOLOM KANAN: PILIHAN JALUR (STICKY) -->
+            <!-- SIDEBAR JALUR -->
+            <!-- SIDEBAR: PILIHAN JALUR -->
             <div class="col-lg-4">
                 <div class="glass-card sticky-top" style="top: 100px; border: 1px solid rgba(0, 194, 255, 0.3);">
                     <h5 class="mb-3 fw-bold text-white"><i class="bi bi-signpost-split"></i> Pilih Jalur</h5>
-                    <p class="text-muted small mb-4">Pilih jalur untuk akses booking resmi.</p>
+                    <p class="text-muted small mb-4">Klik jalur untuk melihat detail lengkap.</p>
 
                     <div class="list-group">
                         <?php if(count($routes) == 0): ?>
                             <div class="alert alert-warning text-dark">Belum ada data jalur.</div>
                         <?php endif; ?>
 
-                        <!-- LOOPING DATA JALUR -->
                         <?php foreach($routes as $r): ?>
-                        <div class="list-group-item list-group-item-glass p-3 mb-2">
-                            <div class="d-flex justify-content-between">
+                        <!-- Ganti div menjadi tag <a> agar seluruh kotak bisa diklik -->
+                        <a href="detail_jalur.php?id=<?= $r['id'] ?>" class="list-group-item list-group-item-glass p-3 mb-2 text-decoration-none action-hover">
+                            <div class="d-flex justify-content-between align-items-center">
                                 <h6 class="mb-0 fw-bold text-white"><?= $r['name'] ?></h6>
-                                <?php if($r['status'] == 'Tutup'): ?>
-                                    <span class="badge bg-danger">Tutup</span>
-                                <?php else: ?>
-                                    <span class="badge bg-success">Buka</span>
-                                <?php endif; ?>
+                                <i class="bi bi-chevron-right text-white-50"></i>
                             </div>
                             
-                            <p class="mb-2 small text-white-50">
-                                Kesulitan: <?= $r['difficulty'] ?> • <?= $r['est_time'] ?>
-                            </p>
-                            
-                            <!-- LOGIKA TOMBOL BOOKING -->
-                            <?php if($r['status'] == 'Tutup'): ?>
-                                <button disabled class="btn btn-secondary w-100 btn-sm">Jalur Ditutup</button>
-                            <?php else: ?>
-                                <?php if($r['is_online_booking']): ?>
-                                    <!-- Jika Online -->
-                                    <a href="<?= $r['booking_url'] ?>" target="_blank" class="btn btn-info w-100 btn-sm fw-bold">
-                                        Booking Online <i class="bi bi-box-arrow-up-right"></i>
-                                    </a>
-                                <?php else: ?>
-                                    <!-- Jika Offline (Panggil Modal) -->
-                                    <button class="btn btn-outline-light w-100 btn-sm" data-bs-toggle="modal" data-bs-target="#offlineModal<?= $r['id'] ?>">
-                                        Info Basecamp <i class="bi bi-info-circle"></i>
-                                    </button>
+                            <div class="d-flex gap-2 mt-2">
+                                <span class="badge bg-secondary font-monospace"><?= $r['difficulty'] ?></span>
+                                <span class="badge bg-dark border border-secondary"><?= $r['est_time'] ?></span>
+                            </div>
 
-                                    <!-- MODAL KHUSUS PER JALUR -->
-                                    <div class="modal fade" id="offlineModal<?= $r['id'] ?>" tabindex="-1">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content text-dark">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title fw-bold">Info Basecamp - <?= $r['name'] ?></h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="alert alert-warning text-dark">
-                                                        <i class="bi bi-exclamation-triangle"></i> Jalur ini menggunakan sistem <b>On The Spot (Offline)</b>.
-                                                    </div>
-                                                    <p>Silakan daftar langsung di basecamp:</p>
-                                                    <ul>
-                                                        <li>Bawa KTP Asli & Fotokopi</li>
-                                                        <li>Surat Keterangan Sehat</li>
-                                                        <li>Membayar Simaksi di Lokasi</li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                            <div class="mt-2 text-info small">
+                                <?php if($r['status'] == 'Tutup'): ?>
+                                    <span class="text-danger"><i class="bi bi-x-circle"></i> Tutup</span>
+                                <?php else: ?>
+                                    <?php if($r['is_online_booking']): ?>
+                                        <i class="bi bi-globe"></i> Booking Online
+                                    <?php else: ?>
+                                        <i class="bi bi-geo-alt"></i> Daftar di Basecamp
+                                    <?php endif; ?>
                                 <?php endif; ?>
-                            <?php endif; ?>
-                        </div>
+                            </div>
+                        </a>
                         <?php endforeach; ?>
                     </div>
                 </div>
             </div>
+
+            <style>
+                .action-hover { transition: all 0.2s; border-left: 3px solid transparent; }
+                .action-hover:hover { 
+                    background: rgba(255,255,255,0.1); 
+                    border-left: 3px solid #0dcaf0; /* Warna biru muda */
+                    padding-left: 1.5rem !important;
+                }
+            </style>
         </div>
     </div>
-
-    <footer class="footer-section mt-5 pt-5 pb-3">
-        <div class="container text-center">
-            <div class="border-top border-secondary pt-3 mt-3 small text-muted">
-                &copy; 2026 IndoSummit.
-            </div>
-        </div>
-    </footer>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

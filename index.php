@@ -53,7 +53,7 @@ $mountains = $stmt->fetchAll();
                     <li class="nav-item"><a class="nav-link" href="#explore">Explore</a></li>
                     <!-- Menu Admin hanya muncul jika role admin -->
                     <?php if(isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
-                        <li class="nav-item"><a class="nav-link text-warning" href="admin/tambah_gunung.php">Admin Panel</a></li>
+                        <li class="nav-item"><a class="nav-link text-warning" href="admin/dashboard.php">Admin Panel</a></li>
                     <?php endif; ?>
                 </ul>
 
@@ -68,7 +68,7 @@ $mountains = $stmt->fetchAll();
                                 <span class="small fw-bold"><?= explode(' ', $_SESSION['name'])[0] ?></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end bg-dark border-secondary">
-                                <li><a class="dropdown-item text-white" href="#">Profil Saya</a></li>
+                                <li><a class="dropdown-item text-white" href="profile.php">Profil Saya</a></li>
                                 <li><hr class="dropdown-divider bg-secondary"></li>
                                 <li><a class="dropdown-item text-danger" href="logout.php">Logout</a></li>
                             </ul>
