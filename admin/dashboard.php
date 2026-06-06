@@ -181,39 +181,85 @@ $users = $conn->query("SELECT * FROM users ORDER BY id DESC")->fetchAll();
                 </div>
             </div>
 
-            <!-- TAB TRAILS -->
+            <!-- TAB TRAILS  -->
             <div class="tab-pane fade" id="trails">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2 class="fw-bold text-white">Manajemen Jalur</h2>
-                    <a href="tambah_jalur.php" class="btn btn-info fw-bold">+ Tambah Jalur</a>
+                <h2 class="fw-bold text-white mb-4">Manajemen Jalur</h2>
+                
+                <!-- STEP 1: PILIH GUNUNG DENGAN SEARCH BAR -->
+                <div class="glass-card p-4 mb-4 border border-info">
+                    <label class="text-white fw-bold mb-2"><i class="bi bi-search text-info"></i> Langkah 1: Cari & Pilih Gunung</label>
+
+                    <!-- Custom Searchable Dropdown Bootstrap 5 -->
+                    <div class="dropdown">
+                        <button class="btn border-secondary dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center text-white" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="btnMountainSelect" style="background: rgba(0,0,0,0.4);">
+                            -- Silakan Cari & Pilih Gunung --
+                        </button>
+
+                        <ul class="dropdown-menu dropdown-menu-dark w-100 shadow-lg p-2 border-secondary" style="max-height: 350px; overflow-y: auto;">
+                            
+                            <!-- Search Bar di dalam Dropdown (Fixed di atas) -->
+                            <li class="position-sticky top-0 bg-dark z-3 pb-2" style="margin-top: -8px; padding-top: 8px;">
+                                <input type="text" class="form-control form-control-sm bg-dark text-white border-info" id="searchMountainInput" placeholder="🔍 Ketik nama gunung disini..." onkeyup="filterDropdown()">
+                            </li>
+
+                            <!-- Opsi Tampilkan Semua -->
+                            <li><a class="dropdown-item mnt-option text-info fw-bold mt-1" href="#" data-id="all">Tampilkan Semua Jalur (Semua Gunung)</a></li>
+
+                            <!-- Looping Data Gunung -->
+                            <?php foreach($gunungs as $g): ?>
+                                <li><a class="dropdown-item mnt-option" href="#" data-id="<?= $g['id'] ?>"><?= $g['name'] ?></a></li>
+                            <?php endforeach; ?>
+                            
+                        </ul>
+                    </div>
+
+                    <!-- Hidden Input untuk menyimpan ID Gunung untuk script tabel -->
+                    <input type="hidden" id="selectMountainFilter" value="">
                 </div>
-                <div class="glass-card p-0 overflow-hidden">
-                    <div class="table-responsive">
-                        <table class="table table-glass mb-0 text-white align-middle">
-                            <thead class="bg-dark bg-opacity-50"><tr><th>Nama Jalur</th><th>Gunung</th><th>Tipe</th><th>Status</th><th>Aksi</th></tr></thead>
-                            <tbody>
-                                <?php foreach($jalurs as $j): ?>
-                                <tr>
-                                    <td class="fw-bold"><?= $j['name'] ?></td>
-                                    <td><?= $j['mountain_name'] ?></td>
-                                    <td>
-                                        <?= $j['is_online_booking'] ? '<span class="badge bg-primary">Online</span>' : '<span class="badge bg-secondary">Offline</span>' ?>
-                                    </td>
-                                    <td>
-                                        <?php if($j['status'] == 'Buka'): ?>
-                                            <span class="badge bg-success">Buka</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-danger">Tutup</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <a href="edit_jalur.php?id=<?= $j['id'] ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
-                                        <a href="hapus_jalur.php?id=<?= $j['id'] ?>" onclick="return confirmDelete()" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+
+                <!-- STEP 2: AREA PENGELOLAAN JALUR -->
+                <div id="routeManagerArea" class="d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="text-white mb-0"><i class="bi bi-2-circle-fill text-info"></i> Langkah 2: Kelola Jalur</h5>
+                        <!-- Tombol tambah jalur (Linknya akan diubah oleh JS) -->
+                        <a href="tambah_jalur.php" id="btnAddRoute" class="btn btn-info fw-bold">+ Tambah Jalur Baru</a>
+                    </div>
+                    
+                    <div class="glass-card p-0 overflow-hidden">
+                        <div class="table-responsive">
+                            <table class="table table-glass mb-0 text-white align-middle">
+                                <thead class="bg-dark bg-opacity-50">
+                                    <tr><th>Nama Jalur</th><th>Gunung</th><th>Tipe</th><th>Status</th><th>Aksi</th></tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach($jalurs as $j): ?>
+                                    <!-- Tambahkan atribut data-mountain-id untuk difilter oleh Javascript -->
+                                    <tr class="route-row" data-mountain-id="<?= $j['mountain_id'] ?>">
+                                        <td class="fw-bold"><?= $j['name'] ?></td>
+                                        <td><?= $j['mountain_name'] ?></td>
+                                        <td><?= $j['is_online_booking'] ? '<span class="badge bg-primary">Online</span>' : '<span class="badge bg-secondary">Offline</span>' ?></td>
+                                        <td>
+                                            <?php if($j['status'] == 'Buka'): ?>
+                                                <span class="badge bg-success">Buka</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-danger">Tutup</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <a href="edit_jalur.php?id=<?= $j['id'] ?>" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i></a>
+                                            <a href="hapus_jalur.php?id=<?= $j['id'] ?>" onclick="return confirmDelete()" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                            
+                            <!-- Pesan jika gunung tidak punya jalur -->
+                            <div id="noRouteMsg" class="p-4 text-center text-white-50 d-none">
+                                <i class="bi bi-exclamation-circle fs-2 d-block mb-2"></i>
+                                Belum ada jalur pendakian yang ditambahkan untuk gunung ini.
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -266,5 +312,91 @@ $users = $conn->query("SELECT * FROM users ORDER BY id DESC")->fetchAll();
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Script Custom Searchable Dropdown & Filter Tabel -->
+    <script>
+        // 1. Mencegah Dropdown tertutup saat sedang mengetik di Search Bar
+        document.getElementById('searchMountainInput').addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        // 2. Fitur Live Search di dalam Dropdown
+        function filterDropdown() {
+            let input = document.getElementById('searchMountainInput').value.toLowerCase();
+            let options = document.querySelectorAll('.mnt-option');
+
+            options.forEach(opt => {
+                let text = opt.innerText.toLowerCase();
+                // Jika teks cocok dengan input, tampilkan, jika tidak sembunyikan
+                if(text.includes(input)) {
+                    opt.parentElement.style.display = 'block'; 
+                } else {
+                    opt.parentElement.style.display = 'none'; 
+                }
+            });
+        }
+
+        // 3. Event saat Nama Gunung Diklik dari Dropdown
+        document.querySelectorAll('.mnt-option').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault(); // Mencegah pindah halaman
+                
+                // Ubah teks tombol utama jadi nama gunung yang terpilih
+                document.getElementById('btnMountainSelect').innerHTML = this.innerHTML;
+                
+                // Set ID gunung ke hidden input
+                document.getElementById('selectMountainFilter').value = this.getAttribute('data-id');
+                
+                // Reset search bar kembali kosong
+                document.getElementById('searchMountainInput').value = '';
+                filterDropdown(); // Munculkan semua list kembali untuk pencarian berikutnya
+
+                // Jalankan fungsi filter tabel jalur di bawahnya
+                filterRoutes();
+            });
+        });
+
+        // 4. Fungsi Filter Tabel Jalur (Logika tetap sama)
+        function filterRoutes() {
+            var selectedMountainId = document.getElementById('selectMountainFilter').value;
+            var managerArea = document.getElementById('routeManagerArea');
+            var rows = document.querySelectorAll('.route-row');
+            var btnAdd = document.getElementById('btnAddRoute');
+            var noRouteMsg = document.getElementById('noRouteMsg');
+            var visibleCount = 0;
+
+            // Sembunyikan tabel jika belum memilih
+            if (selectedMountainId === '') {
+                managerArea.classList.add('d-none');
+                return;
+            }
+
+            // Munculkan area tabel
+            managerArea.classList.remove('d-none');
+
+            // Set link tambah jalur otomatis ke gunung tersebut
+            if (selectedMountainId === 'all') {
+                btnAdd.href = 'tambah_jalur.php';
+            } else {
+                btnAdd.href = 'tambah_jalur.php?mountain_id=' + selectedMountainId;
+            }
+
+            // Saring baris tabel
+            rows.forEach(function(row) {
+                if (selectedMountainId === 'all' || row.getAttribute('data-mountain-id') === selectedMountainId) {
+                    row.style.display = ''; 
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none'; 
+                }
+            });
+
+            // Tampilkan pesan jika tidak ada jalur
+            if (visibleCount === 0) {
+                noRouteMsg.classList.remove('d-none');
+            } else {
+                noRouteMsg.classList.add('d-none');
+            }
+        }
+    </script>
 </body>
 </html>
